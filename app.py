@@ -1,19 +1,19 @@
 from flask import Flask, render_template, request, jsonify
 import torch
-from transformers import pipeline
+from diffusers import AutoPipelineForText2Image
 import io
 import base64
 
 app = Flask(__name__)
 
-print("Loading Lightweight Image Generator Model (Under 5GB)...")
-# SD-Turbo ek fast aur lightweight image generation model hai (approx 2-3 GB)
-image_pipe = pipeline(
-    "text-to-image",
-    model="stabilityai/sd-turbo",
-    torch_dtype=torch.float32 if not torch.cuda.is_available() else torch.float16,
-    device_map="auto"
+print("Loading Lightweight Image Generator Model (SD-Turbo)...")
+# AutoPipelineForText2Image automatically correct model config mapping handle karta hai
+image_pipe = AutoPipelineForText2Image.from_pretrained(
+    "stabilityai/sd-turbo", 
+    torch_dtype=torch.float32 if not torch.cuda.is_available() else torch.float16, 
+    variant="fp16" if torch.cuda.is_available() else None
 )
+image_pipe.to("cuda" if torch.cuda.is_available() else "cpu")
 print("Image Model Loaded Successfully!")
 
 @app.route("/")
@@ -29,10 +29,9 @@ def generate():
         return jsonify({"error": "Please enter an image prompt."}), 400
 
     try:
-        # Prompt ke mutabiq image generate karna (SD-Turbo ke liye num_inference_steps=4 best hai)
+        # SD-Turbo ke liye guidance_scale=0.0 aur num_inference_steps=1 ya 4 best hain
         image = image_pipe(user_prompt, num_inference_steps=4, guidance_scale=0.0).images[0]
         
-        # Image ko base64 format mein convert karna taaki frontend par direct show ho sake
         buffered = io.BytesIO()
         image.save(buffered, format="JPEG")
         img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
