@@ -1,18 +1,20 @@
 from flask import Flask, render_template, request, jsonify
 import torch
 from transformers import pipeline
+import io
+import base64
 
 app = Flask(__name__)
 
-print("Loading Open Meta Llama 3.2 1B Model (No Token Required)...")
-# unsloth repo se Meta Llama model direct download hota hai bina token ke
-pipe = pipeline(
-    "text-generation",
-    model="unsloth/Llama-3.2-1B-Instruct",
-    torch_dtype=torch.float32,
+print("Loading Lightweight Image Generator Model (Under 5GB)...")
+# SD-Turbo ek fast aur lightweight image generation model hai (approx 2-3 GB)
+image_pipe = pipeline(
+    "text-to-image",
+    model="stabilityai/sd-turbo",
+    torch_dtype=torch.float32 if not torch.cuda.is_available() else torch.float16,
     device_map="auto"
 )
-print("Model Loaded Successfully!")
+print("Image Model Loaded Successfully!")
 
 @app.route("/")
 def home():
@@ -24,48 +26,21 @@ def generate():
     user_prompt = data.get("prompt", "")
 
     if not user_prompt:
-        return jsonify({"response": "Please enter a message."}), 400
+        return jsonify({"error": "Please enter an image prompt."}), 400
 
-    messages = [
-        {
-            "role": "system",
-            "content": """You are "Lyramoon", an intelligent AI assistant created by MUHAMMAD TAQI.
-When asked about your identity, creator, or links, always maintain this context:
-- Name: Lyramoon
-- Created By: MUHAMMAD TAQI
-- Family AI Link: https://lyra.oneapp.dev/
-- Creator's Official Website: https://nexura.oneapp.dev/
+    try:
+        # Prompt ke mutabiq image generate karna (SD-Turbo ke liye num_inference_steps=4 best hai)
+        image = image_pipe(user_prompt, num_inference_steps=4, guidance_scale=0.0).images[0]
+        
+        # Image ko base64 format mein convert karna taaki frontend par direct show ho sake
+        buffered = io.BytesIO()
+        image.save(buffered, format="JPEG")
+        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-Rules:
-1. Always be polite, clear, and helpful.
-2. Provide precise, factual, and correct information. Never invent fake facts or hallucinate details.
-3. If you do not know something, state it clearly instead of guessing."""
-        },
-        {"role": "user", "content": user_prompt}
-    ]
-
-    prompt = pipe.tokenizer.apply_chat_template(
-        messages, tokenize=False, add_generation_prompt=True
-    )
-
-    outputs = pipe(
-        prompt,
-        max_new_tokens=256,
-        do_sample=True,
-        temperature=0.7,
-        top_k=50,
-        top_p=0.95
-    )
-
-    generated_text = outputs[0]["generated_text"]
-
-    # Meta Llama 3 / 3.2 special token parsing
-    if "<|start_header_id|>assistant<|end_header_id|>" in generated_text:
-        response = generated_text.split("<|start_header_id|>assistant<|end_header_id|>")[-1].replace("<|eot_id|>", "").strip()
-    else:
-        response = generated_text.strip()
-
-    return jsonify({"response": response})
+        return jsonify({"image": f"data:image/jpeg;base64,{img_str}"})
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=7860)
