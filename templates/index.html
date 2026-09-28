@@ -1,465 +1,190 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LYRAMOON AI</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Lyramoon AI - Next-Gen Image Synthesizer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darker: '#030712',
+                        cardBg: '#0b0f19',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-color: #030014;
-            --card-bg: rgba(15, 10, 30, 0.55);
-            --border-glow: rgba(236, 72, 153, 0.35);
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --pink-accent: #ec4899;
-            --purple-accent: #a855f7;
-            --cyan-accent: #06b6d4;
-        }
-
-        * {
-            box-sizing: border-box;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            position: relative;
-        }
-
-        /* Ambient Glowing Background Orbs */
-        .ambient-orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(100px);
-            opacity: 0.5;
-            z-index: 0;
-            animation: orbFloat 12s infinite alternate ease-in-out;
-        }
-        .orb-1 { width: 350px; height: 350px; background: var(--pink-accent); top: -50px; left: -50px; }
-        .orb-2 { width: 400px; height: 400px; background: var(--purple-accent); bottom: -100px; right: -50px; animation-delay: -6s; }
-        .orb-3 { width: 250px; height: 250px; background: var(--cyan-accent); top: 40%; left: 50%; transform: translate(-50%, -50%); opacity: 0.25; }
-
-        @keyframes orbFloat {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(30px, 50px) scale(1.15); }
-        }
-
-        /* Futuristic Glass Container */
-        .chat-container {
-            width: 100%;
-            max-width: 750px;
-            height: 88vh;
-            background: var(--card-bg);
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 28px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8),
-                        0 0 40px rgba(168, 85, 247, 0.15);
-            z-index: 1;
-            position: relative;
-        }
-
-        /* Animated Glowing Border Overlay */
-        .chat-container::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 28px;
-            padding: 1.5px;
-            background: linear-gradient(135deg, var(--pink-accent), transparent, var(--purple-accent), var(--cyan-accent));
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            pointer-events: none;
-        }
-
-        /* Header Styling */
-        .chat-header {
-            padding: 22px 30px;
-            background: rgba(10, 5, 20, 0.6);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .header-info h2 {
-            font-size: 1.6rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #ffffff 0%, #f472b6 50%, #c084fc 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -0.5px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .header-info p {
-            font-size: 0.82rem;
-            color: var(--text-secondary);
-            margin-top: 2px;
-            font-weight: 400;
-            letter-spacing: 0.5px;
-        }
-
-        .header-info p span {
-            color: var(--pink-accent);
-            font-weight: 600;
-        }
-
-        /* Pulse Indicator */
-        .status-badge {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(236, 72, 153, 0.1);
-            border: 1px solid rgba(236, 72, 153, 0.3);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            color: #f472b6;
-            font-weight: 600;
-        }
-
-        .pulse-dot {
-            width: 8px;
-            height: 8px;
-            background-color: var(--pink-accent);
-            border-radius: 50%;
-            box-shadow: 0 0 10px var(--pink-accent);
-            animation: pulse 1.8s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(236, 72, 153, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(236, 72, 153, 0); }
-        }
-
-        /* Chat Area */
-        .chat-box {
-            flex: 1;
-            overflow-y: auto;
-            padding: 25px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            scroll-behavior: smooth;
-        }
-
-        .chat-box::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .chat-box::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-        }
-
-        /* Animated Chat Bubbles */
-        .message-wrapper {
-            display: flex;
-            gap: 12px;
-            align-items: flex-end;
-            max-width: 82%;
-            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px) scale(0.96); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        .user-wrapper {
-            align-self: flex-end;
-            flex-direction: row-reverse;
-        }
-
-        .bot-wrapper {
-            align-self: flex-start;
-        }
-
-        .avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-            flex-shrink: 0;
-        }
-
-        .bot-avatar {
-            background: linear-gradient(135deg, var(--pink-accent), var(--purple-accent));
-            color: #fff;
-            box-shadow: 0 4px 15px rgba(236, 72, 153, 0.4);
-        }
-
-        .user-avatar {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-        }
-
-        .message {
-            padding: 15px 20px;
-            border-radius: 20px;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            word-wrap: break-word;
-            position: relative;
-        }
-
-        .user {
-            background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
-            color: #ffffff;
-            border-bottom-right-radius: 4px;
-            box-shadow: 0 8px 20px rgba(236, 72, 153, 0.25);
-        }
-
-        .bot {
-            background: rgba(255, 255, 255, 0.04);
-            color: #e2e8f0;
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-bottom-left-radius: 4px;
-            backdrop-filter: blur(10px);
         }
-
-        /* Typing Dots Indicator Animation */
-        .typing-indicator {
-            display: flex;
-            gap: 5px;
-            align-items: center;
-            padding: 18px 22px;
-        }
-
-        .typing-dot {
-            width: 7px;
-            height: 7px;
-            background-color: var(--pink-accent);
-            border-radius: 50%;
-            animation: bounce 1.4s infinite ease-in-out both;
-        }
-
-        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
-        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
-
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
-            40% { transform: scale(1); opacity: 1; }
-        }
-
-        /* Input Controls Area */
-        .input-box {
-            padding: 20px;
-            background: rgba(10, 5, 20, 0.6);
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .input-wrapper {
-            flex: 1;
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        input {
-            width: 100%;
-            padding: 16px 20px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 16px;
-            color: #fff;
-            font-size: 0.95rem;
-            outline: none;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        input::placeholder {
-            color: #64748b;
-        }
-
-        input:focus {
-            background: rgba(255, 255, 255, 0.07);
-            border-color: var(--pink-accent);
-            box-shadow: 0 0 20px rgba(236, 72, 153, 0.25);
-        }
-
-        button {
-            width: 52px;
-            height: 52px;
-            background: linear-gradient(135deg, var(--pink-accent), var(--purple-accent));
-            color: #ffffff;
-            border: none;
-            border-radius: 16px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 6px 20px rgba(236, 72, 153, 0.35);
-            flex-shrink: 0;
-        }
-
-        button:hover {
-            transform: translateY(-2px) scale(1.03);
-            box-shadow: 0 10px 25px rgba(236, 72, 153, 0.5);
-        }
-
-        button:active {
-            transform: translateY(0) scale(0.97);
+        .glow-effect {
+            box-shadow: 0 0 50px -10px rgba(168, 85, 247, 0.25);
         }
     </style>
 </head>
-<body>
+<body class="bg-darker text-slate-100 min-h-screen flex flex-col justify-between selection:bg-purple-500 selection:text-white relative overflow-x-hidden">
 
-    <!-- Glowing Background Orbs -->
-    <div class="ambient-orb orb-1"></div>
-    <div class="ambient-orb orb-2"></div>
-    <div class="ambient-orb orb-3"></div>
+    <!-- Background Ambient Glows -->
+    <div class="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/15 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-10 right-1/4 w-96 h-96 bg-pink-600/15 rounded-full blur-3xl pointer-events-none"></div>
 
-    <div class="chat-container">
-        <!-- Header -->
-        <div class="chat-header">
-            <div class="header-info">
-                <h2><i class="fa-solid font-awesome fa-moon"></i> LYRAMOON AI</h2>
-                <p>Designed & Crafted by <span>Muhammad Taqi</span></p>
+    <!-- Navigation Header -->
+    <header class="w-full border-b border-slate-800/60 glass-panel sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
             </div>
-            <div class="status-badge">
-                <div class="pulse-dot"></div> Voice Active
-            </div>
+            <span class="font-extrabold tracking-wider text-lg bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-200 to-purple-400">LYRAMOON</span>
         </div>
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-950/80 text-purple-300 border border-purple-800/50">
+                <span class="w-2 h-2 mr-1.5 bg-emerald-400 rounded-full animate-pulse"></span> SD-Turbo Engine
+            </span>
+        </div>
+    </header>
 
-        <!-- Chat Scroll Area -->
-        <div class="chat-box" id="chatBox">
-            <div class="message-wrapper bot-wrapper">
-                <div class="avatar bot-avatar"><i class="fa-solid fa-sparkles"></i></div>
-                <div class="message bot">
-                    Greetings! I am <b>LYRAMOON</b>. How may I illuminate your thoughts today?
+    <!-- Main Workspace -->
+    <main class="w-full max-w-5xl mx-auto px-4 py-8 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start z-10">
+        
+        <!-- Left Column: Controls -->
+        <div class="lg:col-span-5 glass-panel rounded-3xl p-6 shadow-2xl flex flex-col gap-6">
+            <div>
+                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                    <span>✨ Image Generation</span>
+                </h2>
+                <p class="text-xs text-slate-400 mt-1">Transform your imagination into high-definition art instantly.</p>
+            </div>
+
+            <!-- Prompt Input Group -->
+            <div class="flex flex-col gap-2">
+                <label for="promptInput" class="text-xs font-semibold uppercase tracking-wider text-slate-400">Prompt Description</label>
+                <div class="relative">
+                    <textarea id="promptInput" rows="4" placeholder="A futuristic cyberpunk shrine in neon rain, cinematic lighting, 8k..." 
+                        class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl p-4 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition resize-none"></textarea>
                 </div>
             </div>
-        </div>
 
-        <!-- Input Bar -->
-        <div class="input-box">
-            <div class="input-wrapper">
-                <input type="text" id="userInput" placeholder="Ask LyraMoon anything..." onkeypress="if(event.key==='Enter') sendMessage()">
-            </div>
-            <button onclick="sendMessage()" id="sendBtn">
-                <i class="fa-solid fa-paper-plane"></i>
+            <!-- Generate Action Button -->
+            <button id="generateBtn" onclick="generateImage()" 
+                class="w-full relative group overflow-hidden rounded-2xl p-px font-semibold text-white shadow-xl transition-all duration-300 hover:shadow-purple-500/25 active:scale-[0.99]">
+                <span class="absolute inset-0 bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-600 transition-all duration-300 group-hover:opacity-90"></span>
+                <span class="relative px-6 py-4 rounded-2xl bg-slate-950/0 flex items-center justify-center gap-2 text-sm tracking-wide">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                    <span>Synthesize Image</span>
+                </span>
             </button>
+
+            <!-- Error Notification -->
+            <div id="errorBox" class="hidden bg-red-950/40 border border-red-800/60 text-red-300 text-xs p-3.5 rounded-xl text-center backdrop-blur-sm"></div>
         </div>
-    </div>
 
-    <script>
-        // Smooth Female Voice Output Engine
-        function speak(text) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Stop ongoing speech
-                
-                const utterance = new SpeechSynthesisUtterance(text);
-                const voices = window.speechSynthesis.getVoices();
-                
-                // Prioritize smooth high-quality female voices
-                const femaleVoice = voices.find(v => 
-                    v.name.includes("Google US English") || 
-                    v.name.includes("Samantha") || 
-                    v.name.includes("Zira") || 
-                    v.name.includes("Victoria") ||
-                    v.name.toLowerCase().includes("female")
-                );
-
-                if (femaleVoice) utterance.voice = femaleVoice;
-
-                utterance.pitch = 1.15; // Slightly elevated soft tone
-                utterance.rate = 0.98;   // Smooth natural cadence
-                
-                window.speechSynthesis.speak(utterance);
-            }
-        }
-
-        // Preload synthesis voices
-        window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
-
-        async function sendMessage() {
-            const inputField = document.getElementById("userInput");
-            const chatBox = document.getElementById("chatBox");
-            const userText = inputField.value.trim();
-
-            if (!userText) return;
-
-            // Render User Message
-            chatBox.innerHTML += `
-                <div class="message-wrapper user-wrapper">
-                    <div class="avatar user-avatar"><i class="fa-solid fa-user"></i></div>
-                    <div class="message user">${userText}</div>
-                </div>
-            `;
+        <!-- Right Column: Canvas / Preview Screen -->
+        <div class="lg:col-span-7 glass-panel rounded-3xl p-6 shadow-2xl flex flex-col items-center justify-center min-h-[460px] relative glow-effect">
             
-            inputField.value = "";
-            chatBox.scrollTop = chatBox.scrollHeight;
-
-            // Render Animated Typing Dots
-            const loadingId = 'loading-' + Date.now();
-            chatBox.innerHTML += `
-                <div class="message-wrapper bot-wrapper" id="${loadingId}">
-                    <div class="avatar bot-avatar"><i class="fa-solid fa-sparkles"></i></div>
-                    <div class="message bot typing-indicator">
-                        <div class="typing-dot"></div>
-                        <div class="typing-dot"></div>
-                        <div class="typing-dot"></div>
-                    </div>
+            <!-- Placeholder State -->
+            <div id="placeholderText" class="flex flex-col items-center justify-center text-center p-8">
+                <div class="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-600 mb-4 shadow-inner">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
                 </div>
-            `;
-            chatBox.scrollTop = chatBox.scrollHeight;
+                <h3 class="text-slate-300 font-semibold text-sm">No artwork generated yet</h3>
+                <p class="text-slate-500 text-xs mt-1 max-w-xs">Enter your prompt on the left and click synthesize to create your image.</p>
+            </div>
+
+            <!-- Loader State -->
+            <div id="loader" class="hidden flex flex-col items-center justify-center gap-4">
+                <div class="relative w-16 h-16">
+                    <div class="absolute inset-0 rounded-full border-4 border-purple-500/2fta border-t-purple-500 animate-spin"></div>
+                    <div class="absolute inset-2 rounded-full border-4 border-pink-500/20 border-b-pink-500 animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+                </div>
+                <div class="text-center">
+                    <p class="text-sm font-semibold text-purple-300 tracking-wide animate-pulse">Rendering Pixel Layers...</p>
+                    <p class="text-xs text-slate-500 mt-0.5">Crafting with SD-Turbo tensor pipeline</p>
+                </div>
+            </div>
+
+            <!-- Result Output Image Container -->
+            <div id="imageContainer" class="hidden w-full h-full flex flex-col items-center gap-4">
+                <div class="relative group rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl max-h-[400px]">
+                    <img id="outputImage" class="w-full h-auto object-contain max-h-[380px] rounded-xl" alt="Generated Masterpiece">
+                </div>
+                <a id="downloadBtn" download="lyramoon-artwork.jpg" 
+                    class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 transition flex items-center gap-2 shadow-lg">
+                    <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Download Masterpiece
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full border-t border-slate-900 glass-panel py-4 px-6 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <p>Engineered by <span class="text-purple-400 font-semibold">Muhammad Taqi</span></p>
+        <p class="text-slate-600">Lyramoon Neural Systems &bull; All Rights Reserved</p>
+    </footer>
+
+    <!-- Frontend Integration Script -->
+    <script>
+        async function generateImage() {
+            const promptInput = document.getElementById('promptInput').value.trim();
+            const generateBtn = document.getElementById('generateBtn');
+            const placeholderText = document.getElementById('placeholderText');
+            const loader = document.getElementById('loader');
+            const imageContainer = document.getElementById('imageContainer');
+            const outputImage = document.getElementById('outputImage');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const errorBox = document.getElementById('errorBox');
+
+            if (!promptInput) {
+                errorBox.textContent = "Please enter a description prompt first.";
+                errorBox.classList.remove('hidden');
+                return;
+            }
+
+            // Reset UI View states
+            errorBox.classList.add('hidden');
+            imageContainer.classList.add('hidden');
+            placeholderText.classList.add('hidden');
+            loader.classList.remove('hidden');
+            generateBtn.disabled = true;
+            generateBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
             try {
-                const response = await fetch("/generate", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ prompt: userText })
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: promptInput })
                 });
 
                 const data = await response.json();
-                const botMessage = data.response;
 
-                // Replace typing indicator with actual response
-                const loadingElem = document.getElementById(loadingId);
-                loadingElem.querySelector('.message').innerHTML = botMessage;
-                loadingElem.querySelector('.message').classList.remove('typing-indicator');
-
-                // Trigger Female Speech Engine
-                speak(botMessage);
-
+                if (response.ok && data.image) {
+                    outputImage.src = data.image;
+                    downloadBtn.href = data.image;
+                    imageContainer.classList.remove('hidden');
+                } else {
+                    throw new Error(data.error || "Failed to synthesize image tensor.");
+                }
             } catch (err) {
-                const errorText = "I encountered a connection glitch. Please try again.";
-                const loadingElem = document.getElementById(loadingId);
-                loadingElem.querySelector('.message').innerText = errorText;
-                loadingElem.querySelector('.message').classList.remove('typing-indicator');
-                speak(errorText);
+                errorBox.textContent = err.message;
+                errorBox.classList.remove('hidden');
+                placeholderText.classList.remove('hidden');
+            } finally {
+                loader.classList.add('hidden');
+                generateBtn.disabled = false;
+                generateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             }
-            
-            chatBox.scrollTop = chatBox.scrollHeight;
         }
     </script>
 </body>
