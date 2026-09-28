@@ -9,7 +9,7 @@ app = Flask(__name__)
 print("Loading Lightweight Image Generator Model (SD-Turbo)...")
 # AutoPipelineForText2Image automatically correct model config mapping handle karta hai
 image_pipe = AutoPipelineForText2Image.from_pretrained(
-    "stabilityai/sd-turbo", 
+    "muhammad-taqi512/VINZING-V1", 
     torch_dtype=torch.float32 if not torch.cuda.is_available() else torch.float16, 
     variant="fp16" if torch.cuda.is_available() else None
 )
