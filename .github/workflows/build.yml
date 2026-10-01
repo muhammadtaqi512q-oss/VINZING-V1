@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main", "master" ]
   schedule:
-    # Har 2 ghante baad auto-run hoga
+    # Har 2 ghante baad auto-run hoga  
     - cron: '0 */6 * * *'
   workflow_dispatch:
 
